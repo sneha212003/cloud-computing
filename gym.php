@@ -1,43 +1,60 @@
 <?php
+    // Enable error reporting for debugging
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+
     $insert = false;
-    if(empty($_POST['name'])){
-        echo "<script> alert ('insert all the data');</script>";
-    }
-    else{
+
+    // Check if form is submitted and all fields are filled
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        if (empty($_POST['name']) || empty($_POST['age']) || empty($_POST['gender']) ||
+            empty($_POST['locality']) || empty($_POST['email']) || empty($_POST['phone'])) {
+            echo "<script>alert('Please insert all the data');</script>";
+        } else {
+            // Database connection parameters
             $server = "localhost";
             $username = "root";
             $password = "";
-            $con = mysqli_connect($server, $username, $password);
+            $dbname = "gym";
 
-        // Check for connection success
-            if(!$con){
-            die("connection to this database failed due to" . mysqli_connect_error());
+            // Create a connection
+            $con = new mysqli($server, $username, $password, $dbname);
+
+            // Check for connection success
+            if ($con->connect_error) {
+                die("Connection failed: " . $con->connect_error);
             }
-        //echo "Success connecting to the Database.";
 
+            // Prepare the SQL query using prepared statements to avoid SQL injection
+            $stmt = $con->prepare("INSERT INTO gym1 (name, age, gender, locality, email, phone, dt) 
+                                   VALUES (?, ?, ?, ?, ?, ?, current_timestamp())");
+
+            // Bind the parameters to the SQL query
+            $stmt->bind_param("sissss", $name, $age, $gender, $locality, $email, $phone);
+
+            // Assign POST values to variables
             $name = $_POST['name'];
-            $age = $_POST['age'];
+            $age = (int)$_POST['age'];  // Cast to integer
             $gender = $_POST['gender'];
             $locality = $_POST['locality'];
             $email = $_POST['email'];
-            $phone = $_POST['phone']; 
-            
-                $sql=" INSERT INTO `gym`.`gym1` (`name`, `age`, `gender`, `locality`, `email`, `phone`, `dt`) 
-                VALUES ('$name', '$age', '$gender', '$locality', '$email', '$phone', current_timestamp());";
-            
-        
-        if($con->query($sql)==true){
-            echo "<script> alert ('Successfully inserted');</script>";
-            $insert=true;
-        }
-        else{
-            echo "ERROR $sql <br> $con->error"; 
-        }
-        $con->close();
+            $phone = $_POST['phone'];
 
+            // Execute the query
+            if ($stmt->execute()) {
+                echo "<script>alert('Successfully inserted');</script>";
+                $insert = true;
+            } else {
+                echo "Error: " . $stmt->error;
+            }
+
+            // Close the statement and connection
+            $stmt->close();
+            $con->close();
+        }
     }
-       
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
